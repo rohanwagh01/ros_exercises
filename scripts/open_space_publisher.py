@@ -6,7 +6,8 @@ from ros_exercises.msg import OpenSpace
 import math
 
 def callback(data):
-    pub = rospy.Publisher('open_space', OpenSpace, queue_size=10)
+    publish_topic = rospy.get_param('/open_space_publisher/publish_topic', 'open_space')
+    pub = rospy.Publisher(publish_topic, OpenSpace, queue_size=10)
     scans = data.ranges
     current_angle = data.angle_min
     angle_increment = data.angle_increment
@@ -27,14 +28,10 @@ def callback(data):
 
 def open_space_publisher():
 
-    # In ROS, nodes are uniquely named. If two nodes with the same
-    # name are launched, the previous one is kicked off. The
-    # anonymous=True flag means that rospy will choose a unique
-    # name for our 'listener' node so that multiple listeners can
-    # run simultaneously.
     rospy.init_node('open_space_publisher', anonymous=False)
 
-    rospy.Subscriber("fake_scan", LaserScan, callback)
+    subscribe_topic = rospy.get_param('/open_space_publisher/subscribe_topic', 'fake_scan')
+    rospy.Subscriber(subscribe_topic, LaserScan, callback)
 
     # spin() simply keeps python from exiting until this node is stopped
     rospy.spin()
