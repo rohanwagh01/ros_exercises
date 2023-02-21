@@ -27,16 +27,16 @@ def broadcast_tf(matrix, parent, child):
 
 	br.sendTransform(t)
 
-def dynamic_tf_cam_publisher():
-	rospy.init_node('dynamic_tf_cam_publisher', anonymous=False)
+def base_link_tf_pub():
+	rospy.init_node('base_link_tf_pub', anonymous=False)
 	rate = rospy.Rate(20) # publish at 20hz
 	tfBuffer = tf2_ros.Buffer()
 	listener = tf2_ros.TransformListener(tfBuffer)
 	while not rospy.is_shutdown():
 		try:
-			world_to_base = tfBuffer.lookup_transform('world', 'base_link_gt', rospy.Time())
-			trans = world_to_base.transform.translation
-			rot = world_to_base.transform.rotation
+			world_to_left = tfBuffer.lookup_transform('world', 'left_cam', rospy.Time())
+			trans = world_to_left.transform.translation
+			rot = world_to_left.transform.rotation
 			#create 4x4 tf for world to base
 			quaternion = (rot.x, rot.y, rot.z, rot.w)
 			translation = (trans.x, trans.y, trans.z)
@@ -45,20 +45,14 @@ def dynamic_tf_cam_publisher():
 			#test_matrix = tf_conversions.posemath.toMatrix(tf_conversions.posemath.fromTf(world_to_base)
 			#now use the 4x4 transform that goes from robot to left cam
 			#no rotation, just a 0.05m movement in either directions
-			base_to_left = np.array([[1, 0, 0, -0.05],
+			left_to_base = np.array([[1, 0, 0, 0.05],
 						 [0, 1, 0, 0],
 						 [0, 0, 1, 0],
 						 [0, 0, 0, 1]])
 
-			left_to_right = np.array([[1, 0, 0, 0.1],
-                                                 [0, 1, 0, 0],
-                                                 [0, 0, 1, 0],
-                                                 [0, 0, 0, 1]])
 			#now compute the transform to left camera
-			world_to_left = np.matmul(base_to_left, matrix)
-			world_to_right = np.matmul(left_to_right, world_to_left)
-			broadcast_tf(world_to_left, 'world', 'left_cam')
-			broadcast_tf(left_to_right, 'left_cam', 'right_cam')
+			world_to_base = np.matmul(left_to_base, matrix)
+			broadcast_tf(world_to_base, 'world', 'base_link_gt_2')
 		except Exception as e:
 			rospy.loginfo(e)
 			pass
@@ -66,6 +60,6 @@ def dynamic_tf_cam_publisher():
 
 if __name__ == '__main__':
 	try:
-		dynamic_tf_cam_publisher()
+		base_link_tf_pub()
 	except rospy.ROSInterruptException:
 		pass
